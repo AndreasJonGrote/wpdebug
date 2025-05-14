@@ -1,0 +1,68 @@
+.debug-status {
+    margin-bottom: 40px;
+}
+
+.wpdebug_timestamp {
+    color: #0088ff;
+}
+
+.wpdebug-item {
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.php-fatal-error {
+    color: red;
+}
+
+.php-deprecated {
+    color: violet;
+}
+
+.php-warning {
+    color: orange;
+}
+
+.wptransfer-info {
+    color: orange;
+}
+
+.update-message {
+    color: #777;
+}
+
+/* Status Indicators */
+.status-enabled {
+    color: green;
+}
+
+.status-disabled {
+    color: red;
+}
+
+.status-warning {
+    color: orange;
+}
+
+/* Debug Code Block */
+.debug-code-block {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f8f8;
+}
+
+/* Log Content Container */
+.log-content-container {
+    background: #fff;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: monospace;
+    line-height: 1.5;
+} 
