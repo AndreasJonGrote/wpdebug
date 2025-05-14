@@ -65,6 +65,14 @@ class WP_Debug_Reader {
             array(),
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/wpdebug-styles.css')
         );
+
+        wp_enqueue_script(
+            'wpdebug-scripts',
+            plugins_url('js/wpdebug.js', dirname(__FILE__)),
+            array(),
+            filemtime(plugin_dir_path(dirname(__FILE__)) . 'js/wpdebug.js'),
+            true
+        );
     }
 
     /**
@@ -392,49 +400,7 @@ class WP_Debug_Reader {
      * Add JavaScript for filtering
      */
     private function add_filter_script() {
-        ?>
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkboxes = document.querySelectorAll('.type-filter');
-            const items = document.querySelectorAll('.wpdebug-item');
-            
-            function updateVisibility() {
-                // Get all checked types
-                const checkedTypes = Array.from(checkboxes)
-                    .filter(cb => cb.checked)
-                    .map(cb => cb.dataset.type);
-                
-                // If no types are checked, show all items
-                if (checkedTypes.length === 0) {
-                    items.forEach(item => {
-                        item.style.display = '';
-                    });
-                    return;
-                }
-                
-                // Otherwise, show only items that match checked types
-                items.forEach(item => {
-                    const itemClasses = item.className.split(' ');
-                    const shouldShow = checkedTypes.some(type => itemClasses.includes(type));
-                    item.style.display = shouldShow ? '' : 'none';
-                });
-            }
-            
-            // Initial state: uncheck all boxes but show all items
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            items.forEach(item => {
-                item.style.display = '';
-            });
-            
-            // Add click handlers
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateVisibility);
-            });
-        });
-        </script>
-        <?php
+        // JavaScript wurde in die wpdebug.js Datei verschoben
     }
 
     /**

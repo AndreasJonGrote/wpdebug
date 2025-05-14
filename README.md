@@ -4,6 +4,13 @@ A powerful WordPress plugin for clear visualization and analysis of debug log en
 
 ## Features
 
+### Auto-Refresh Functionality
+- Automatically refreshes the page every 30 seconds when:
+  - Browser tab is not focused OR
+  - Tab is focused but inactive for 30+ seconds
+- Helps monitoring log entries in background tabs
+- Intelligent activity tracking (mouse, keyboard, scroll, touch)
+
 ### Debug Status Overview
 - Display of current WP_DEBUG status
 - Display of WP_DEBUG_LOG status

@@ -32,3 +32,14 @@ function wpdebug_init() {
     return WP_Debug_Reader::get_instance();
 }
 add_action('plugins_loaded', 'wpdebug_init');
+
+function wpdebug_enqueue_scripts() {
+    wp_enqueue_script(
+        'wpdebug-auto-refresh',
+        plugin_dir_url(__FILE__) . 'js/auto-refresh.js',
+        array(),
+        '1.0',
+        true
+    );
+}
+add_action('wp_enqueue_scripts', 'wpdebug_enqueue_scripts');
