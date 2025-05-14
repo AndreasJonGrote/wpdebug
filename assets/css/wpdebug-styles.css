@@ -13,6 +13,9 @@
     padding-bottom: 10px;
     border-bottom: 1px solid #ddd;
 }
+.wpdebug-item:last-of-type {
+    border-bottom: none;
+}
 
 /* Error Types */
 .php-fatal-error,
@@ -71,7 +74,6 @@
 /* Stack Trace */
 .stack-trace {
     color: #666;
-    padding-left: 20px;
     display: block;
     font-family: monospace;
 }
