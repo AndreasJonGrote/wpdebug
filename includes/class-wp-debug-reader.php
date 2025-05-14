@@ -119,17 +119,66 @@ class WP_Debug_Reader {
         // Format double bracket markings after timestamp
         $line = preg_replace('/(?<=\<\/span\>\s)(\[[^\]]+\])\s*(\[[^\]]+\])\s*/', '<span class="wptransfer-info">$1 $2</span> ', $line);
         
-        // Format PHP Fatal Error
-        $line = preg_replace('/(PHP Fatal error):\s*/', '<span class="wpdebug-error-type php-fatal-error">$1:</span> ', $line);
+        // Format Timber messages (trim spaces and color red)
+        $line = preg_replace('/\[\s*Timber\s*\]/', '<span class="timber-error">[Timber]</span>', $line);
         
-        // Format PHP Warning
-        $line = preg_replace('/(PHP Warning):\s*/', '<span class="wpdebug-error-type php-warning">$1:</span> ', $line);
+        // Format RB-CACHE messages
+        if (strpos($line, '[RB-CACHE]') !== false) {
+            $line = preg_replace('/\[RB-CACHE\]/', '<span class="cache-message">[RB-CACHE]</span>', $line);
+        }
         
-        // Format PHP Deprecated
-        $line = preg_replace('/(PHP Deprecated):\s*/', '<span class="wpdebug-error-type php-deprecated">$1:</span> ', $line);
+        // Format Cron reschedule errors (both English and German)
+        $line = preg_replace('/(Cron reschedule event error|Cron-Reschedule-Event-Fehler)/', '<span class="cron-error">$1</span>', $line);
+        
+        // Format Captcha validation messages
+        if (strpos($line, 'Validating captcha') !== false ||
+            strpos($line, 'Validation result') !== false ||
+            strpos($line, 'Captcha validation') !== false) {
+            $line = '<span class="captcha-message">' . $line . '</span>';
+        }
+        
+        // Format automatic update messages
+        if (strpos($line, 'Automatic updates starting...') !== false ||
+            strpos($line, 'Automatic plugin updates complete.') !== false ||
+            strpos($line, 'Automatic updates complete.') !== false) {
+            // Highlight the status message in green
+            $line = preg_replace('/(?<=\<\/span\>\s)(Automatic.*(?:starting\.\.\.|complete\.))/', '<span class="auto-update-status">$1</span>', $line);
+            // Make the rest of the line gray
+            $line = preg_replace('/(?<=<\/span>)(.+)$/', '<span class="update-message">$1</span>', $line);
+        } else if (strpos($line, 'Upgrading plugin') !== false || 
+                  strpos($line, 'Plugin update failed.') !== false || 
+                  strpos($line, 'Plugin updated successfully.') !== false ||
+                  strpos($line, 'theme updates') !== false) {
+            // Make update details gray
+            $line = preg_replace('/(?<=\<\/span\>\s)(.+)$/', '<span class="update-message">$1</span>', $line);
+        }
+        
+        // Format line numbers and file paths
+        $line = preg_replace('/(on line |in )(\d+|[\/\w\-\.]+)/', '<code>$1$2</code>', $line);
+        
+        // Format all PHP error types in one go
+        $error_types = array(
+            'Parse error' => 'php-parse-error',
+            'Fatal error' => 'php-fatal-error',
+            'Warning' => 'php-warning',
+            'Notice' => 'php-notice',
+            'Deprecated' => 'php-deprecated'
+        );
+        
+        foreach ($error_types as $type => $class) {
+            $line = preg_replace('/(PHP ' . $type . '):\s*/', '<span class="wpdebug-error-type ' . $class . '">$1:</span> ', $line);
+        }
         
         // Format WordPress database error
         $line = preg_replace('/(WordPress database error)\s*/', '<span class="wpdebug-error-type php-fatal-error">$1</span> ', $line);
+
+        // Format Twig Runtime Error (both variants)
+        $line = preg_replace('/((?:Next )?Twig\\\\Error\\\\RuntimeError):\s*/', '<span class="wpdebug-error-type twig-error">$1:</span> ', $line);
+        
+        // Format Stack Trace entries
+        if (strpos($line, 'Stack trace:') !== false || preg_match('/^#\d+\s/', $line)) {
+            $line = '<span class="stack-trace">' . $line . '</span>';
+        }
         
         return $line;
     }
@@ -193,6 +242,217 @@ class WP_Debug_Reader {
     }
 
     /**
+     * Get entry type based on content
+     *
+     * @param string $entry The log entry
+     * @return string The entry type class
+     */
+    private function get_entry_type($entry) {
+        $types = array();
+        
+        // PHP Errors
+        if (strpos($entry, 'PHP Fatal error') !== false) $types[] = 'type-php-fatal';
+        if (strpos($entry, 'PHP Parse error') !== false) $types[] = 'type-php-parse';
+        if (strpos($entry, 'PHP Warning') !== false) $types[] = 'type-php-warning';
+        if (strpos($entry, 'PHP Notice') !== false) $types[] = 'type-php-notice';
+        if (strpos($entry, 'PHP Deprecated') !== false) $types[] = 'type-php-deprecated';
+        
+        // WordPress Errors
+        if (strpos($entry, 'WordPress database error') !== false) $types[] = 'type-wp-db';
+        if (strpos($entry, 'Cron reschedule event error') !== false || 
+            strpos($entry, 'Cron-Reschedule-Event-Fehler') !== false) {
+            $types[] = 'type-wp-cron';
+        }
+        
+        // Template Errors
+        if (strpos($entry, 'Twig\Error\RuntimeError') !== false || 
+            strpos($entry, 'Next Twig\Error\RuntimeError') !== false) {
+            $types[] = 'type-twig';
+        }
+        if (strpos($entry, '[ Timber ]') !== false || 
+            strpos($entry, '[Timber]') !== false) {
+            $types[] = 'type-timber';
+        }
+        
+        // Cache
+        if (strpos($entry, '[RB-CACHE]') !== false) $types[] = 'type-cache';
+        
+        // Updates
+        if (strpos($entry, 'Automatic updates') !== false ||
+            strpos($entry, 'Upgrading plugin') !== false ||
+            strpos($entry, 'Plugin update') !== false ||
+            strpos($entry, 'theme updates') !== false) {
+            $types[] = 'type-update';
+        }
+
+        // Captcha
+        if (strpos($entry, 'Validating captcha') !== false ||
+            strpos($entry, 'Validation result') !== false ||
+            strpos($entry, 'Captcha validation') !== false) {
+            $types[] = 'type-captcha';
+        }
+        
+        // If no specific type was found, mark as unspecified
+        if (empty($types)) {
+            $types[] = 'type-unspecified';
+        }
+        
+        return implode(' ', $types);
+    }
+
+    /**
+     * Get available log types with labels
+     *
+     * @return array
+     */
+    private function get_log_types() {
+        return array(
+            'type-php-fatal' => 'PHP Fatal Errors',
+            'type-php-parse' => 'PHP Parse Errors',
+            'type-php-warning' => 'PHP Warnings',
+            'type-php-notice' => 'PHP Notices',
+            'type-php-deprecated' => 'PHP Deprecated',
+            'type-wp-db' => 'WordPress Database Errors',
+            'type-wp-cron' => 'WordPress Cron Errors',
+            'type-twig' => 'Twig Template Errors',
+            'type-timber' => 'Timber Template Errors',
+            'type-cache' => 'Cache Messages',
+            'type-update' => 'Update Messages',
+            'type-captcha' => 'Captcha Messages',
+            'type-unspecified' => 'Unspecified Messages'
+        );
+    }
+
+    /**
+     * Get unique types from log entries
+     *
+     * @param array $entries Log entries
+     * @return array Array of unique type classes found in entries
+     */
+    private function get_unique_types_from_entries($entries) {
+        $unique_types = array();
+        foreach ($entries as $entry) {
+            $types = $this->get_entry_type($entry);
+            if (!empty($types)) {
+                $entry_types = explode(' ', $types);
+                $unique_types = array_merge($unique_types, $entry_types);
+            }
+        }
+        return array_unique($unique_types);
+    }
+
+    /**
+     * Count entries per type
+     *
+     * @param array $entries Log entries
+     * @return array Associative array of type => count
+     */
+    private function count_entries_per_type($entries) {
+        $counts = array();
+        foreach ($entries as $entry) {
+            $types = explode(' ', $this->get_entry_type($entry));
+            foreach ($types as $type) {
+                if (!isset($counts[$type])) {
+                    $counts[$type] = 0;
+                }
+                $counts[$type]++;
+            }
+        }
+        return $counts;
+    }
+
+    /**
+     * Render filter checkboxes
+     *
+     * @param array $available_types Array of types that exist in the current log
+     * @param array $entries Log entries for counting
+     */
+    private function render_filters($available_types, $entries) {
+        $all_types = $this->get_log_types();
+        $type_counts = $this->count_entries_per_type($entries);
+        
+        echo '<div class="log-filters">';
+        echo '<div class="filter-checkboxes">';
+        
+        foreach ($all_types as $type => $label) {
+            if (in_array($type, $available_types)) {
+                $count = isset($type_counts[$type]) ? $type_counts[$type] : 0;
+                echo '<label class="filter-checkbox">';
+                echo '<input type="checkbox" class="type-filter" data-type="' . esc_attr($type) . '"> ';
+                echo esc_html($label) . ' <span class="count">(' . $count . ')</span>';
+                echo '</label>';
+            }
+        }
+        
+        echo '</div>';
+        echo '</div>';
+    }
+
+    /**
+     * Add JavaScript for filtering
+     */
+    private function add_filter_script() {
+        ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.type-filter');
+            const items = document.querySelectorAll('.wpdebug-item');
+            
+            function updateVisibility() {
+                // Get all checked types
+                const checkedTypes = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.dataset.type);
+                
+                // If no types are checked, show all items
+                if (checkedTypes.length === 0) {
+                    items.forEach(item => {
+                        item.style.display = '';
+                    });
+                    return;
+                }
+                
+                // Otherwise, show only items that match checked types
+                items.forEach(item => {
+                    const itemClasses = item.className.split(' ');
+                    const shouldShow = checkedTypes.some(type => itemClasses.includes(type));
+                    item.style.display = shouldShow ? '' : 'none';
+                });
+            }
+            
+            // Initial state: uncheck all boxes but show all items
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            items.forEach(item => {
+                item.style.display = '';
+            });
+            
+            // Add click handlers
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateVisibility);
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Format file size for display
+     *
+     * @param int $bytes File size in bytes
+     * @return string Formatted file size
+     */
+    private function format_file_size($bytes) {
+        if ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        }
+        return $bytes . ' bytes';
+    }
+
+    /**
      * Render plugin page
      */
     public function render_page() {
@@ -200,40 +460,56 @@ class WP_Debug_Reader {
         $debug_active = defined('WP_DEBUG') && WP_DEBUG;
         $debug_log_active = defined('WP_DEBUG_LOG') && WP_DEBUG_LOG;
         $debug_display = defined('WP_DEBUG_DISPLAY') ? WP_DEBUG_DISPLAY : true;
+        $log_file = WP_CONTENT_DIR . '/debug.log';
+        $file_size = file_exists($log_file) ? filesize($log_file) : 0;
+        $formatted_size = $this->format_file_size($file_size);
+        $size_warning = $file_size >= 2097152; // 2MB in bytes
         
         echo '<div class="wrap">';
         echo '<h1>Debug Log Reader</h1>';
         
         // Show debug status
-        echo '<div class="debug-status">
-            <h2>Debug Status</h2>
-            <table class="widefat" style="max-width: 600px;">
-                <thead>
-                    <tr>
-                        <th><strong>Setting</strong></th>
-                        <th><strong>Status</strong></th>
-                        <th><strong>Note</strong></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>WP_DEBUG</td>
-                        <td>' . ($debug_active ? '<span class="status-enabled">enabled</span>' : '<span class="status-disabled">disabled</span>') . '</td>
-                        <td>-</td>
-                    </tr>
-                    <tr>
-                        <td>WP_DEBUG_LOG</td>
-                        <td>' . ($debug_log_active ? '<span class="status-enabled">enabled</span>' : '<span class="status-disabled">disabled</span>') . '</td>
-                        <td>-</td>
-                    </tr>
-                    <tr>
-                        <td>WP_DEBUG_DISPLAY</td>
-                        <td>' . ($debug_display ? '<span class="status-warning">enabled</span>' : '<span class="status-enabled">disabled</span>') . '</td>
-                        <td>' . ($debug_display ? 'Errors are displayed on screen' : 'Errors are only logged') . '</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>';
+        echo '<div class="debug-status">';
+        echo '<h2>Debug Status:</h2>';
+        echo '<table class="widefat" style="max-width: 600px;">';
+        echo '<tbody>';
+        
+        // WP_DEBUG Status
+        echo '<tr>';
+        echo '<td>WP_DEBUG</td>';
+        echo '<td>' . ($debug_active ? '<span class="status-enabled">enabled</span>' : '<span class="status-disabled">disabled</span>') . '</td>';
+        echo '</tr>';
+        
+        // WP_DEBUG_LOG Status
+        echo '<tr>';
+        echo '<td>WP_DEBUG_LOG</td>';
+        echo '<td>' . ($debug_log_active ? '<span class="status-enabled">enabled</span>' : '<span class="status-disabled">disabled</span>') . '</td>';
+        echo '</tr>';
+        
+        // WP_DEBUG_DISPLAY Status
+        echo '<tr>';
+        echo '<td>WP_DEBUG_DISPLAY</td>';
+        echo '<td>' . ($debug_display ? '<span class="status-warning">enabled</span> (errors will be shown on screen)' : '<span class="status-enabled">disabled</span> (errors will only be logged)') . '</td>';
+        echo '</tr>';
+        
+        // Log File Size
+        echo '<tr>';
+        echo '<td>Log File Size</td>';
+        echo '<td>';
+        if ($file_size > 0) {
+            echo '<span class="' . ($size_warning ? 'status-warning' : 'status-enabled') . '">' . $formatted_size . '</span>';
+            if ($size_warning) {
+                echo ' <span class="status-warning">(Consider clearing the log file)</span>';
+            }
+        } else {
+            echo '<span class="status-disabled">No log file</span>';
+        }
+        echo '</td>';
+        echo '</tr>';
+        
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
 
         if (!$debug_active || !$debug_log_active) {
             echo '<div class="notice notice-warning inline"><p>';
@@ -248,8 +524,6 @@ class WP_Debug_Reader {
         }
         
         // Read debug.log if enabled
-        $log_file = WP_CONTENT_DIR . '/debug.log';
-        
         if (!file_exists($log_file)) {
             echo '<div class="notice notice-warning inline"><p>';
             echo '<strong>No debug.log file found!</strong><br>';
@@ -273,18 +547,29 @@ class WP_Debug_Reader {
                 echo '<div class="log-content-container">';
                 
                 $entries = $this->parse_log_content($log_content);
+                $available_types = $this->get_unique_types_from_entries($entries);
                 
                 foreach ($entries as $entry) {
-                    echo '<div class="wpdebug-item">' . $this->format_log_line(esc_html($entry)) . '</div>';
+                    $type_classes = $this->get_entry_type($entry);
+                    echo '<div class="wpdebug-item ' . esc_attr($type_classes) . '">' . $this->format_log_line(esc_html($entry)) . '</div>';
                 }
                 
                 echo '</div>';
                 
+                // Add filter checkboxes below the content
+                $this->render_filters($available_types, $entries);
+                
+                // Add JavaScript for filtering
+                $this->add_filter_script();
+                
                 // Button to clear log file with nonce
-                echo '<form method="post" style="margin-top: 15px;">';
+                echo '<div class="clear-log-section">';
+                echo '<hr>';
+                echo '<form method="post">';
                 wp_nonce_field('wpdebug_clear_log');
                 echo '<input type="submit" name="clear_log" value="Clear Log File" class="button button-primary">';
                 echo '</form>';
+                echo '</div>';
             }
             echo '</div>';
         }

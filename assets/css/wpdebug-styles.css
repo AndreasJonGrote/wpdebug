@@ -11,11 +11,15 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     padding-bottom: 10px;
-    margin-bottom: 10px;
     border-bottom: 1px solid #ddd;
 }
 
-.php-fatal-error {
+/* Error Types */
+.php-fatal-error,
+.php-parse-error,
+.twig-error,
+.timber-error,
+.cron-error {
     color: red;
 }
 
@@ -23,11 +27,10 @@
     color: violet;
 }
 
-.php-warning {
-    color: orange;
-}
-
-.wptransfer-info {
+.php-warning,
+.php-notice,
+.wptransfer-info,
+.status-warning {
     color: orange;
 }
 
@@ -36,16 +39,14 @@
 }
 
 /* Status Indicators */
-.status-enabled {
+.status-enabled,
+.auto-update-status,
+.cache-message {
     color: green;
 }
 
 .status-disabled {
     color: red;
-}
-
-.status-warning {
-    color: orange;
 }
 
 /* Debug Code Block */
@@ -59,10 +60,93 @@
 /* Log Content Container */
 .log-content-container {
     background: #fff;
-    padding: 8px 10px;
+    padding: 20px;
     border: 1px solid #ddd;
     max-height: 500px;
     overflow-y: auto;
     font-family: monospace;
     line-height: 1.5;
+}
+
+/* Stack Trace */
+.stack-trace {
+    color: #666;
+    padding-left: 20px;
+    display: block;
+    font-family: monospace;
+}
+
+/* Type Classes for Filtering */
+.type-php-fatal,
+.type-php-parse,
+.type-php-warning,
+.type-php-notice,
+.type-php-deprecated,
+.type-wp-db,
+.type-wp-cron,
+.type-twig,
+.type-timber,
+.type-cache,
+.type-update {
+    /* No specific styling needed, classes are for JS filtering */
+}
+
+/* Filter Controls */
+.log-filters {
+    margin: 20px 0;
+}
+
+.log-filters h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.filter-hint {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.filter-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-checkbox {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.filter-checkbox:hover {
+    background: #f0f0f0;
+}
+
+.filter-checkbox input {
+    margin-right: 5px;
+}
+
+.filter-checkbox .count {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 3px;
+}
+
+.captcha-message {
+    color: turquoise;
+}
+
+.clear-log-section {
+    margin-top: 30px;
+    text-align: right;
+}
+
+.clear-log-section hr {
+    margin-bottom: 20px;
+    border: 0;
+    border-top: 1px solid #ddd;
 } 
