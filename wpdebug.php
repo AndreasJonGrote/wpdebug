@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name: WP Debug Log Reader
- * Plugin URI: https://github.com/yourusername/wpdebug
+ * Plugin URI: https://github.com/AndreasJonGrote/wpdebug
  * Description: A professional interface to monitor and manage your WordPress debug.log file directly from the admin area.
  * Version: 1.0.0
  * Requires at least: 5.0
  * Requires PHP: 7.4
- * Author: Your Name
- * Author URI: https://yourwebsite.com
+ * Author: Andreas Jon Grote
+ * Author URI: https://xjonx.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wpdebug
