@@ -28,3 +28,7 @@
 [15-May-2025 06:58:57 UTC] Cron unschedule event error for hook: cerber_scheduled_hash, Error code: could_not_set, Error message: The cron event list could not be saved., Data: {"schedule":false,"args":["\/Users\/andreschwarzer\/Local Sites\/valantic-template-april-25\/app\/public\/wp-content\/uploads\/wp-cerber-UKGXA1HQFO8W32N09IC\/tmp\/all-in-one-wp-migration-unlimited-extension.zip"]}
 [15-May-2025 07:47:59 UTC] [WPTransfer] [INFO] Starte Transfer-Prüfung | {"trigger":"cron","transfer_id":null}
 [15-May-2025 07:47:59 UTC] [WPTransfer] [INFO] Transfer-Prüfung abgeschlossen | {"trigger":"cron","stats":{"expired":{"success":0,"failed":0,"errors":[]},"single_download":{"success":0,"failed":0,"errors":[]}}}
+[14-May-2025 20:42:36 UTC] WordPress database error Unknown column 'token' in 'field list' for query SELECT token FROM wp_wptransfer_transfers made by do_action('admin_post_wptransfer_delete_all_transfers'), WP_Hook->do_action, WP_Hook->apply_filters, wptransfer_delete_all_transfers
+[14-May-2025 20:50:10 UTC] [WPTransfer] Update-Datenbank-Aktion wurde aufgerufen
+[14-May-2025 20:50:10 UTC] [WPTransfer] Starte Datenbank-Update
+[14-May-2025 20:50:10 UTC] [WPTransfer] Datenbank-Update abgeschlossen
