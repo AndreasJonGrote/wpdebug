@@ -162,7 +162,7 @@ class WP_Debug_Reader {
         }
         
         // Format line numbers and file paths
-        $line = preg_replace('/(on line |in )(\d+|[\/\w\-\.]+)/', '<code>$1$2</code>', $line);
+        #$line = preg_replace('/(on line |in )(\d+|[\/\w\-\.]+)/', '<code>$1$2</code>', $line);
         
         // Format all PHP error types in one go
         $error_types = array(
@@ -202,11 +202,22 @@ class WP_Debug_Reader {
         $current_entry = '';
         $lines = explode("\n", $content);
         $in_update_block = false;
+        $current_stack_number = -1;
         
-        foreach ($lines as $line) {
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
             if (empty(trim($line))) continue;
             
-            // Check for update block start
+            // Check if this line starts a new error entry
+            $is_error_start = preg_match('/^\[[\d]{2}-[A-Za-z]{3}-[\d]{4}\s[\d]{2}:[\d]{2}:[\d]{2}\sUTC\]\sPHP\s(?:Notice|Warning|Error|Fatal error|Parse error|Deprecated):/', $line);
+            
+            // Check if this is a stack trace line and get its number
+            $stack_number = -1;
+            if (preg_match('/^PHP\s+(\d+)\./', $line, $matches)) {
+                $stack_number = intval($matches[1]);
+            }
+            
+            // Check for update block
             if (strpos($line, 'Automatic updates starting...') !== false) {
                 if (!empty($current_entry)) {
                     $entries[] = trim($current_entry);
@@ -218,26 +229,35 @@ class WP_Debug_Reader {
             
             // If we're in an update block
             if ($in_update_block) {
-                // Check if update block ends
                 if (strpos($line, 'Automatic updates complete.') !== false) {
                     $current_entry .= "\n" . $line;
                     $entries[] = trim($current_entry);
                     $current_entry = '';
                     $in_update_block = false;
-                    continue;
+                } else {
+                    $current_entry .= "\n" . $line;
                 }
-                $current_entry .= "\n" . $line;
                 continue;
             }
             
-            // Normal log entry
-            if (preg_match('/^\[[\d]{2}-[A-Za-z]{3}-[\d]{4}\s[\d]{2}:[\d]{2}:[\d]{2}\sUTC\]/', $line)) {
+            // Start a new entry if:
+            // 1. This is a new error OR
+            // 2. Stack trace number is not sequential
+            if ($is_error_start || ($stack_number > -1 && $stack_number != $current_stack_number + 1)) {
                 if (!empty($current_entry)) {
                     $entries[] = trim($current_entry);
                 }
                 $current_entry = $line;
+                $current_stack_number = ($stack_number > -1) ? $stack_number : -1;
             } else {
-                $current_entry .= "\n" . $line;
+                // Add line to current entry
+                if (!empty($current_entry)) {
+                    $current_entry .= "\n";
+                }
+                $current_entry .= $line;
+                if ($stack_number > -1) {
+                    $current_stack_number = $stack_number;
+                }
             }
         }
         

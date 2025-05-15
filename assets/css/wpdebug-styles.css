@@ -78,6 +78,15 @@
     font-family: monospace;
 }
 
+.stack-trace .wpdebug_timestamp {
+    color: #666;
+}
+
+.stack-trace .wpdebug_timestamp:first-of-type {
+    color: #0088ff;
+}
+
+
 /* Type Classes for Filtering */
 .type-php-fatal,
 .type-php-parse,
