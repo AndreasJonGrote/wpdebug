@@ -151,6 +151,10 @@
     color: turquoise;
 }
 
+.xdebug-message {
+    color: #f700ff;
+}
+
 .clear-log-section {
     margin-top: 30px;
     text-align: right;
@@ -161,3 +165,13 @@
     border: 0;
     border-top: 1px solid #ddd;
 } 
+
+.wp-core-ui .button.button-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.wp-core-ui .button.button-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}

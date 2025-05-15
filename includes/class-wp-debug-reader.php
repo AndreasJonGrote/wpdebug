@@ -144,6 +144,11 @@ class WP_Debug_Reader {
             strpos($line, 'Captcha validation') !== false) {
             $line = '<span class="captcha-message">' . $line . '</span>';
         }
+
+        // Format Xdebug messages
+        if (strpos($line, 'Xdebug:') !== false) {
+            $line = preg_replace('/Xdebug:/', '<span class="xdebug-message">Xdebug:</span>', $line);
+        }
         
         // Format automatic update messages
         if (strpos($line, 'Automatic updates starting...') !== false ||
@@ -162,7 +167,7 @@ class WP_Debug_Reader {
         }
         
         // Format line numbers and file paths
-        #$line = preg_replace('/(on line |in )(\d+|[\/\w\-\.]+)/', '<code>$1$2</code>', $line);
+        $line = preg_replace('/ on line (\d+)/', ' <code>on line $1</code>', $line);
         
         // Format all PHP error types in one go
         $error_types = array(
@@ -202,20 +207,21 @@ class WP_Debug_Reader {
         $current_entry = '';
         $lines = explode("\n", $content);
         $in_update_block = false;
-        $current_stack_number = -1;
         
         for ($i = 0; $i < count($lines); $i++) {
             $line = $lines[$i];
             if (empty(trim($line))) continue;
             
-            // Check if this line starts a new error entry
-            $is_error_start = preg_match('/^\[[\d]{2}-[A-Za-z]{3}-[\d]{4}\s[\d]{2}:[\d]{2}:[\d]{2}\sUTC\]\sPHP\s(?:Notice|Warning|Error|Fatal error|Parse error|Deprecated):/', $line);
+            // Check if this line starts with a timestamp
+            $has_timestamp = preg_match('/^\[[\d]{2}-[A-Za-z]{3}-[\d]{4}\s[\d]{2}:[\d]{2}:[\d]{2}\sUTC\]/', $line);
             
-            // Check if this is a stack trace line and get its number
-            $stack_number = -1;
-            if (preg_match('/^PHP\s+(\d+)\./', $line, $matches)) {
-                $stack_number = intval($matches[1]);
-            }
+            // Check if this is a stack trace line
+            $is_stack = $has_timestamp && preg_match('/\]\sPHP\s+\d+\./', $line);
+            
+            // Look ahead to see if next line is a stack trace line
+            $next_line = isset($lines[$i + 1]) ? $lines[$i + 1] : '';
+            $next_is_stack = !empty($next_line) && 
+                           preg_match('/^\[[\d]{2}-[A-Za-z]{3}-[\d]{4}\s[\d]{2}:[\d]{2}:[\d]{2}\sUTC\]\sPHP\s+\d+\./', $next_line);
             
             // Check for update block
             if (strpos($line, 'Automatic updates starting...') !== false) {
@@ -241,23 +247,20 @@ class WP_Debug_Reader {
             }
             
             // Start a new entry if:
-            // 1. This is a new error OR
-            // 2. Stack trace number is not sequential
-            if ($is_error_start || ($stack_number > -1 && $stack_number != $current_stack_number + 1)) {
+            // 1. This line has a timestamp AND
+            // 2. This is not a stack trace line AND
+            // 3. Next line is not a stack trace
+            if ($has_timestamp && !$is_stack && !$next_is_stack) {
                 if (!empty($current_entry)) {
                     $entries[] = trim($current_entry);
                 }
                 $current_entry = $line;
-                $current_stack_number = ($stack_number > -1) ? $stack_number : -1;
             } else {
                 // Add line to current entry
                 if (!empty($current_entry)) {
                     $current_entry .= "\n";
                 }
                 $current_entry .= $line;
-                if ($stack_number > -1) {
-                    $current_stack_number = $stack_number;
-                }
             }
         }
         
@@ -319,6 +322,11 @@ class WP_Debug_Reader {
             strpos($entry, 'Captcha validation') !== false) {
             $types[] = 'type-captcha';
         }
+
+        // Xdebug
+        if (strpos($entry, 'Xdebug:') !== false) {
+            $types[] = 'type-xdebug';
+        }
         
         // If no specific type was found, mark as unspecified
         if (empty($types)) {
@@ -347,6 +355,7 @@ class WP_Debug_Reader {
             'type-cache' => 'Cache Messages',
             'type-update' => 'Update Messages',
             'type-captcha' => 'Captcha Messages',
+            'type-xdebug' => 'Xdebug Messages',
             'type-unspecified' => 'Unspecified Messages'
         );
     }
@@ -497,7 +506,8 @@ class WP_Debug_Reader {
         echo '</table>';
         echo '</div>';
 
-        if (!$debug_active || !$debug_log_active) {
+        // Überprüfe ob Debug-Logging korrekt konfiguriert ist
+        if (!defined('WP_DEBUG') || !WP_DEBUG || !defined('WP_DEBUG_LOG') || !WP_DEBUG_LOG || !$debug_active || !$debug_log_active) {
             echo '<div class="notice notice-warning inline"><p>';
             echo '<strong>Debug logging is not fully configured:</strong><br>';
             echo 'To enable debug logging, add these lines to your wp-config.php:<br>';
@@ -553,7 +563,7 @@ class WP_Debug_Reader {
                 echo '<hr>';
                 echo '<form method="post">';
                 wp_nonce_field('wpdebug_clear_log');
-                echo '<input type="submit" name="clear_log" value="Clear Log File" class="button button-primary">';
+                echo '<input type="submit" name="clear_log" value="Clear Log File" class="button button-danger" onclick="return confirm(\'Sind Sie sicher, dass Sie die Debug-Log-Datei löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.\');">';
                 echo '</form>';
                 echo '</div>';
             }
