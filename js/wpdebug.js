@@ -4,6 +4,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let refreshInterval = 30000; // 30 Sekunden
     let checkInterval;
 
+    // Zum letzten Eintrag scrollen
+    const logContainer = document.querySelector('.log-content-container');
+    if (logContainer) {
+        const lastEntry = document.getElementById('lastentry');
+        if (lastEntry) {
+            lastEntry.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
     // Aktivitäten tracken
     function updateLastActivity() {
         lastActivity = Date.now();

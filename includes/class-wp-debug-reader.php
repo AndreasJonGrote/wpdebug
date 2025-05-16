@@ -550,6 +550,7 @@ class WP_Debug_Reader {
                     echo '<div class="wpdebug-item ' . esc_attr($type_classes) . '">' . $this->format_log_line(esc_html($entry)) . '</div>';
                 }
                 
+                echo '<div id="lastentry"></div>';
                 echo '</div>';
                 
                 // Add filter checkboxes below the content
