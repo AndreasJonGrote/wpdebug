@@ -501,6 +501,12 @@ class WP_Debug_Reader {
         }
         echo '</td>';
         echo '</tr>';
+
+        // PHP Version
+        echo '<tr>';
+        echo '<td>PHP Version</td>';
+        echo '<td><span class="status-enabled">' . phpversion() . '</span></td>';
+        echo '</tr>';
         
         echo '</tbody>';
         echo '</table>';
